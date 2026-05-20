@@ -5,7 +5,7 @@ import psycopg2
 from datetime import datetime
 
 # ==============================================================================
-# 1. PREMIUM TACTICAL THEME & MOBILE HEADERS
+# 1. MOBILE OPTIMIZATION META-TAGS (Forces full-screen native standalone mode)
 # ==============================================================================
 st.components.v1.html(
     """
@@ -28,40 +28,26 @@ st.components.v1.html(
     height=0,
 )
 
-# Set up page configurations with a clean, centered layout
+# Set page configuration immediately after layout adjustments
 st.set_page_config(
-    page_title="TACTICAL ENGINE",
-    page_icon="⚡",
+    page_title="DEA Athletic Engine",
+    page_icon="💪",
     layout="centered"
 )
 
-# Custom CSS with flush left alignment to prevent indentation compiler errors
-st.markdown("""
-<style>
-.stApp { background-color: #0E1117; color: #E0E2E5; }
-.stButton>button { 
-    background-color: #00CC66 !important; 
-    color: #000000 !important; 
-    font-weight: 700 !important;
-    border-radius: 8px !important;
-    border: none !important;
-    width: 100% !important;
-}
-.stTabs [data-baseweb="tab"] { font-weight: 600; color: #A3A8B4; }
-.stTabs [aria-selected="true"] { color: #00CC66 !important; border-bottom-color: #00CC66 !important; }
-</style>
-""", unsafe_allow_html=True)
-
 # ==============================================================================
-# 2. CACHED DATABASE CONNECTIONS
+# 2. CACHED DATABASE RECONCILIATION (Pings Neon only when cache expires or resets)
 # ==============================================================================
 def get_db_connection():
+    """Extracts the secure connection URL from Streamlit's secrets vault."""
     db_url = st.secrets["NEON_DATABASE_URL"]
     return psycopg2.connect(db_url)
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=600)  # Caches the dataframe for 10 minutes to save mobile data
 def load_workout_history():
-    query = "SELECT * FROM workout_logs ORDER BY date DESC;"
+    """Queries historical metrics from your remote database cloud table."""
+    # CHANGED: Target 'workouts' to match your exact Neon table name
+    query = "SELECT * FROM workouts ORDER BY date DESC;"
     try:
         conn = get_db_connection()
         df = pd.read_sql(query, conn)
@@ -69,29 +55,14 @@ def load_workout_history():
         return df
     except Exception as e:
         st.error(f"Database Fetch Error: {e}")
-        return pd.DataFrame()
+        return pd.DataFrame()  # Returns an empty dataframe fallback if connection fails
 
 # ==============================================================================
-# 3. HIGH-VISIBILITY VISUAL DASHBOARD
+# 3. INTERFACE NAVIGATION & DATA CAPTURE
 # ==============================================================================
-st.title("⚡ TACTICAL ATHLETIC ENGINE")
-st.write("---")
+st.title("🦅 DEA Performance Log")
 
-# Quick snapshot high-impact metrics cards at the top
-history_df = load_workout_history()
-
-if not history_df.empty:
-    col_a, col_b = st.columns(2)
-    with col_a:
-        last_pullups = int(history_df['pullups'].iloc[0]) if 'pullups' in history_df.columns else 0
-        st.metric(label="Last Pull-Up Set", value=f"{last_pullups} Reps", delta="Baseline Standard")
-    with col_b:
-        last_run = str(history_df['run_time'].iloc[0]) if 'run_time' in history_df.columns else "00:00"
-        st.metric(label="Last 1-Mile Split", value=last_run, delta="- Pace Sync", delta_color="inverse")
-    st.write("---")
-
-# Tab creation
-tab1, tab2 = st.tabs(["Log Daily Split", "Performance Analytics"])
+tab1, tab2 = st.tabs(["Log Daily Split", "Performance History"])
 
 with tab1:
     st.write("### Record Performance Metrics")
@@ -99,28 +70,42 @@ with tab1:
     with st.form("workout_form", clear_on_submit=True):
         log_date = st.date_input("Training Date", value=datetime.today())
         
-        st.write("⚡ **Strength Calisthenics**")
+        st.write("---")
+        st.write("**Strength Calisthenics**")
+        
+        # Tap-Target Sliders: Defaulting to your baseline metrics so typing isn't required
         assisted_pullups = st.slider(
             label="Assisted Pull-Up Reps (Bench Assisted)",
-            min_value=0, max_value=30, value=8, step=1
+            min_value=0,
+            max_value=30,
+            value=8,
+            step=1
         )
         
-        st.write("🏃‍♂️ **Cardio Endurance**")
-        c1, c2 = st.columns(2)
-        with c1:
+        st.write("---")
+        st.write("**Cardio Endurance**")
+        
+        # Dual columns to easily capture clean run splits on a mobile screen
+        col1, col2 = st.columns(2)
+        with col1:
             run_minutes = st.number_input("1-Mile Run (Minutes)", min_value=4, max_value=15, value=6, step=1)
-        with c2:
+        with col2:
             run_seconds = st.number_input("1-Mile Run (Seconds)", min_value=0, max_value=59, value=30, step=1)
             
-        submit_btn = st.form_submit_button("COMMIT SPLIT TO LEDGER")
+        # CHANGED: Fixed the typo function to the correct st.form_submit_button()
+        submit_btn = st.form_submit_button("Submit Training Log")
         
         if submit_btn:
+            # Format the run time metrics into a standard string
             formatted_run_time = f"{run_minutes:02d}:{run_seconds:02d}"
+            
+            # Insert logic into your Neon remote ledger
             try:
                 conn = get_db_connection()
                 cur = conn.cursor()
+                # CHANGED: Target 'workouts' to match your exact Neon table name
                 insert_query = """
-                    INSERT INTO workout_logs (date, pullups, run_time)
+                    INSERT INTO workouts (date, pullups, run_time)
                     VALUES (%s, %s, %s);
                 """
                 cur.execute(insert_query, (log_date, assisted_pullups, formatted_run_time))
@@ -129,6 +114,8 @@ with tab1:
                 conn.close()
                 
                 st.success("Workout committed securely to Neon cloud ledger!")
+                
+                # CRITICAL: Clears the cache so the history tab updates immediately on submission
                 st.cache_data.clear()
                 st.rerun()
                 
@@ -136,7 +123,11 @@ with tab1:
                 st.error(f"Failed to submit entry: {e}")
 
 with tab2:
-    st.write("### Historical Training Log Ledger")
+    st.write("### Historical Training Log")
+    
+    # Loads the cached dataframe instantly without waiting for a database round-trip
+    history_df = load_workout_history()
+    
     if not history_df.empty:
         st.dataframe(history_df, use_container_width=True)
     else:
