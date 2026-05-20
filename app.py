@@ -50,6 +50,11 @@ st.markdown("""
         .stTabs [data-baseweb="tab"] { font-weight: 600; color: #A3A8B4; }
         .stTabs [aria-selected="true"] { color: #00CC66 !important; border-bottom-color: #00CC66 !important; }
     </style>
+""", unsafe_allow_html=True) # <-- CHANGED FROM unsafe_html=True
+        }
+        .stTabs [data-baseweb="tab"] { font-weight: 600; color: #A3A8B4; }
+        .stTabs [aria-selected="true"] { color: #00CC66 !important; border-bottom-color: #00CC66 !important; }
+    </style>
 """, unsafe_html=True)
 
 # ==============================================================================
