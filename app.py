@@ -35,27 +35,22 @@ st.set_page_config(
     layout="centered"
 )
 
-# Custom CSS to force a high-contrast dark aesthetic, clean borders, and premium buttons
+# Custom CSS with flush left alignment to prevent indentation compiler errors
 st.markdown("""
-    <style>
-        .stApp { background-color: #0E1117; color: #E0E2E5; }
-        .stButton>button { 
-            background-color: #00CC66 !important; 
-            color: #000000 !important; 
-            font-weight: 700 !important;
-            border-radius: 8px !important;
-            border: none !important;
-            width: 100% !important;
-        }
-        .stTabs [data-baseweb="tab"] { font-weight: 600; color: #A3A8B4; }
-        .stTabs [aria-selected="true"] { color: #00CC66 !important; border-bottom-color: #00CC66 !important; }
-    </style>
-""", unsafe_allow_html=True) # <-- CHANGED FROM unsafe_html=True
-        }
-        .stTabs [data-baseweb="tab"] { font-weight: 600; color: #A3A8B4; }
-        .stTabs [aria-selected="true"] { color: #00CC66 !important; border-bottom-color: #00CC66 !important; }
-    </style>
-""", unsafe_html=True)
+<style>
+.stApp { background-color: #0E1117; color: #E0E2E5; }
+.stButton>button { 
+    background-color: #00CC66 !important; 
+    color: #000000 !important; 
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    border: none !important;
+    width: 100% !important;
+}
+.stTabs [data-baseweb="tab"] { font-weight: 600; color: #A3A8B4; }
+.stTabs [aria-selected="true"] { color: #00CC66 !important; border-bottom-color: #00CC66 !important; }
+</style>
+""", unsafe_allow_html=True)
 
 # ==============================================================================
 # 2. CACHED DATABASE CONNECTIONS
@@ -88,11 +83,9 @@ history_df = load_workout_history()
 if not history_df.empty:
     col_a, col_b = st.columns(2)
     with col_a:
-        # Pulls your last logged pull-up stat dynamically
         last_pullups = int(history_df['pullups'].iloc[0]) if 'pullups' in history_df.columns else 0
         st.metric(label="Last Pull-Up Set", value=f"{last_pullups} Reps", delta="Baseline Standard")
     with col_b:
-        # Pulls your last 1-mile run time split
         last_run = str(history_df['run_time'].iloc[0]) if 'run_time' in history_df.columns else "00:00"
         st.metric(label="Last 1-Mile Split", value=last_run, delta="- Pace Sync", delta_color="inverse")
     st.write("---")
@@ -119,7 +112,6 @@ with tab1:
         with c2:
             run_seconds = st.number_input("1-Mile Run (Seconds)", min_value=0, max_value=59, value=30, step=1)
             
-        # FIXED: Correct form submit function
         submit_btn = st.form_submit_button("COMMIT SPLIT TO LEDGER")
         
         if submit_btn:
